@@ -1,26 +1,26 @@
-<textarea id="input"></textarea>
-<button onclick="sendToAI()">Envoyer</button>
-<div id="response"></div>
+export default async function handler(req, res) {
+  const apiKey = process.env.GEMINI_API_KEY;
 
-<script>
-async function sendToAI() {
-  const input = document.getElementById("input").value;
-  const resDiv = document.getElementById("response");
-  resDiv.innerText = "💬 Réflexion en cours...";
+  if (!apiKey) {
+    return res.status(500).json({ error: "GEMINI_API_KEY manquant" });
+  }
 
   try {
-    const res = await fetch("/api/gemini", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: input }] }]
-      })
-    });
-    const data = await res.json();
-    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Aucune réponse";
-    resDiv.innerText = output;
-  } catch(e) {
-    resDiv.innerText = "⚠️ Erreur de connexion";
+    const body = await req.json();
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 }
-</script>
